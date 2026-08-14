@@ -55,6 +55,12 @@ jobs:
           repository: golukon/russia-mobile-internet-whitelist
           path: russia-mobile-internet-whitelist
 
+      - name: Checkout runetfreedom/geodat2srs
+        uses: actions/checkout@v4
+        with:
+          repository: runetfreedom/geodat2srs
+          path: geodat2srs
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
@@ -78,6 +84,13 @@ jobs:
           cd ../publish
           sha256sum geosite.dat > geosite.dat.sha256sum
 
+      - name: Generate sing-box srs
+        run: |
+          go build -C geodat2srs ./
+          ./geodat2srs/geodat2srs geosite -i ./publish/geosite.dat -o ./tmp/sing-box/rule-set-geosite/
+          cd ./tmp/sing-box || exit 1
+          zip -r ../../publish/sing-box.zip *
+        
       - name: Release and upload assets
         uses: svenstaro/upload-release-action@v2
         with:
@@ -90,6 +103,8 @@ jobs:
 
       - name: Git push assets to "release" branch
         run: |
+          rm -rf ./publish/sing-box.zip
+          mv ./tmp/sing-box ./publish/sing-box
           cd publish || exit 1
           git init
           git config --local user.name "github-actions[bot]"
